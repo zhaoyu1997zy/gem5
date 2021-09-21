@@ -1105,7 +1105,6 @@ class EventQueue
             deschedule(getHead());
     }
 
-   void safeDeschedule(Event *targetEvent);
 };
 
 inline void

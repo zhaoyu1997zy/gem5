@@ -201,6 +201,8 @@ EventQueue::remove(Event *event)
 
     if (!curr || *curr != *event){
         std::cout << "debug-zy, in func EventQueue::remove, event not found\n";
+        std::cout << "Event to be removed:" << std::endl;
+        event->dump();
         if (curr) {
             std::cout << "Top of candidate bin: " << curr->name()
                       << ", when: " << curr->when() << std::endl;
@@ -515,27 +517,6 @@ EventQueue::handleAsyncRemovals()
         async_removal_queue.pop_front();
     }
     async_removal_queue_mutex.unlock();
-}
-
-/**
- * When deschedule a event not from the owning thread,
- * create a new Event to do this job.
- */
-void EventQueue::safeDeschedule(Event *targetEvent){
-    std::cout << "debug-zy, in func safeDeschedule" << std::endl;
-    auto *queue = targetEvent -> queue;
-    auto *descheduleEvent = new EventFunctionWrapper(
-        [targetEvent](){
-            if (targetEvent->scheduled()){
-                targetEvent->queue->deschedule(targetEvent);
-            }
-        },
-        "cancleScheduledEvent"
-    );
-    if(!descheduleEvent->scheduled()){
-        descheduleEvent->dump();
-        queue->schedule(descheduleEvent, queue->getCurTick());
-    }
 }
 
 } // namespace gem5
