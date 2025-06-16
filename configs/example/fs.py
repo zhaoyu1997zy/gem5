@@ -229,6 +229,19 @@ def build_test_system(np):
                 obj.eventq_index = 0
             cpu.eventq_index = i + 1
         test_sys.kvm_vm = KvmVM()
+    else:
+
+        print("debug-zy, not kvm")
+        import time
+        time.sleep(2)
+        for i,cpu in enumerate(test_sys.cpu):
+            # Child objects usually inherit the parent's event
+            # queue. Override that and use the same event queue for
+            # all devices.
+            for obj in cpu.descendants():
+                obj.eventq_index = 0
+            cpu.eventq_index = i + 1
+            print(f"debug-zy:cpu:{cpu}, index:{cpu.eventq_index}")
 
     return test_sys
 
@@ -348,6 +361,14 @@ elif len(bm) == 1 and args.dist:
                         args.etherdump);
 elif len(bm) == 1:
     root = Root(full_system=True, system=test_sys)
+    print(f"debug-zy, root.__dict__:{root.__dict__}")
+    print(f"vars:{vars(root)}")
+    print(f"dir:{dir(root)}")
+    print(f"full_system:{root.full_system}, system:{root.system}")
+    import time
+    time.sleep(5)
+    for obj in root.descendants():
+        print(f"obj:{obj}")
 else:
     print("Error I don't know how to create more than 2 systems.")
     sys.exit(1)
@@ -358,6 +379,8 @@ if ObjectList.is_kvm_cpu(TestCPUClass) or \
     # Uses gem5's parallel event queue feature
     # Note: The simulator is quite picky about this number!
     root.sim_quantum = int(1e9) # 1 ms
+else:
+    root.sim_quantum = int(1e9)
 
 if args.timesync:
     root.time_sync_enable = True
