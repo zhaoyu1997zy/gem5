@@ -220,7 +220,6 @@ AtomicSimpleCPU::verifyMemoryMode() const
 void
 AtomicSimpleCPU::activateContext(ThreadID thread_num)
 {
-    std::cout << "debug-zy, in func AtomicSimpleCPU::activeContext()" << std::endl;
     DPRINTF(SimpleCPU, "ActivateContext %d\n", thread_num);
 
     assert(thread_num < numThreads);
