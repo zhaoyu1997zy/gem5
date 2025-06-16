@@ -52,6 +52,8 @@
 #include "sim/cur_tick.hh"
 #include "sim/serialize.hh"
 
+#include "base/statistics.hh"
+
 namespace gem5
 {
 
@@ -628,6 +630,9 @@ class EventQueue
     Event *head;
     Tick _curTick;
 
+    Stats::Scalar totalScheduledEvents;
+    Stats::Scalar totalCpuTickScheduledEvents;
+
     //! Mutex to protect async queue.
     UncontendedMutex async_queue_mutex;
 
@@ -755,6 +760,21 @@ class EventQueue
     void name(const std::string &st) { objName = st; }
     /** @}*/ //end of api_eventq group
 
+    void
+    regStats(){
+        std::cout << "debug-zy, in func EventQueue::regStats()." << std::endl;
+        totalScheduledEvents
+        .name("eventq.total_scheduled_events")
+        .desc("Total num of events(zytest)")
+        .flags(Stats::display)
+        .prereq(totalScheduledEvents);
+        totalCpuTickScheduledEvents
+        .name("eventq.total_scheduled_events.cpu.tick")
+        .desc("Total num of cpu tick events(zytest)")
+        .flags(Stats::display)
+        .prereq(totalCpuTickScheduledEvents);
+    }
+
     /**
      * Schedule the given event on this queue. Safe to call from any thread.
      *
@@ -768,6 +788,12 @@ class EventQueue
         assert(event->initialized());
 
         event->setWhen(when, this);
+
+        // add statistics
+        if (event->name().find("tick.wrapped_function_event") != std::string::npos) {
+            totalCpuTickScheduledEvents++;
+        }
+        totalScheduledEvents++;
 
         // The check below is to make sure of two things
         // a. A thread schedules local events on other queues through the
@@ -796,6 +822,7 @@ class EventQueue
     void
     deschedule(Event *event)
     {
+        event->dump();
         assert(event->scheduled());
         assert(event->initialized());
         assert(!inParallelMode || this == curEventQueue());
