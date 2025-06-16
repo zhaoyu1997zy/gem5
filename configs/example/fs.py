@@ -224,6 +224,8 @@ def build_test_system(np):
 
         MemConfig.config_mem(args, test_sys)
 
+
+
     if ObjectList.is_kvm_cpu(TestCPUClass) or \
         ObjectList.is_kvm_cpu(FutureClass):
         # Assign KVM CPUs to their own event queues / threads. This
@@ -238,8 +240,16 @@ def build_test_system(np):
             cpu.eventq_index = i + 1
         test_sys.kvm_vm = KvmVM()
     else:
+        print("gem5 going parallel")
+        m5.ticks.fixGlobalFrequency()
+        
+        import time
+        for i, cpu in enumerate(test_sys.cpu):
+            print(f"debug-zy:i:{i}， cpu:{cpu}")
+            time.sleep(1)
+            cpu.eventq_index = 1
 
-        print("debug-zy, not kvm")
+        # print("debug-zy, not kvm")
         # import time
         # time.sleep(2)
         # for i,cpu in enumerate(test_sys.cpu):
@@ -248,7 +258,7 @@ def build_test_system(np):
         #     # all devices.
         #     for obj in cpu.descendants():
         #         obj.eventq_index = 0
-        #     cpu.eventq_index = i + 1
+        #     cpu.eventq_index = 1
         #     print(f"debug-zy:cpu:{cpu}, index:{cpu.eventq_index}")
 
     return test_sys
@@ -369,12 +379,6 @@ elif len(bm) == 1 and args.dist:
                         args.etherdump);
 elif len(bm) == 1:
     root = Root(full_system=True, system=test_sys)
-    print(f"debug-zy, root.__dict__:{root.__dict__}")
-    print(f"vars:{vars(root)}")
-    print(f"dir:{dir(root)}")
-    print(f"full_system:{root.full_system}, system:{root.system}")
-    import time
-    time.sleep(1)
     for obj in root.descendants():
         print(f"obj:{obj}")
 else:
@@ -387,8 +391,9 @@ if ObjectList.is_kvm_cpu(TestCPUClass) or \
     # Uses gem5's parallel event queue feature
     # Note: The simulator is quite picky about this number!
     root.sim_quantum = int(1e9) # 1 ms
-# else:
-#     root.sim_quantum = int(1e9)
+else:
+    root.sim_quantum = m5.ticks.fromSeconds(m5.util.convert.anyToLatency("500us"))
+    # root.sim_quantum = int(1e9)
 
 if args.timesync:
     root.time_sync_enable = True
@@ -417,6 +422,10 @@ print(args.checkpoint_restore)
 print(test_sys.readfile)
 
 import time
+
+time.sleep(1)
+print(f"debug-zy, all command line args:{args}")
+print(f"m5.options:{m5.options}")
 time.sleep(3)
 Simulation.setWorkCountOptions(test_sys, args)
 Simulation.run(args, root, test_sys, FutureClass)
