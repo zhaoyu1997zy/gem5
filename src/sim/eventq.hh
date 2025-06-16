@@ -631,7 +631,11 @@ class EventQueue
     Tick _curTick;
 
     Stats::Scalar totalScheduledEvents;
+    Stats::Scalar totalWrappedFunctionEvents;
     Stats::Scalar totalCpuTickScheduledEvents;
+    Stats::Scalar totalAtomicCpuTickScheduledEvents;
+    Stats::Scalar totalRTCEvents;
+    Stats::Scalar totalRTCTickEvents;
 
     //! Mutex to protect async queue.
     UncontendedMutex async_queue_mutex;
@@ -769,12 +773,36 @@ class EventQueue
         .flags(Stats::display)
         .unit(statistics::units::Count::get())
         .prereq(totalScheduledEvents);
+        totalWrappedFunctionEvents
+        .name("eventq.total_wrapped_function_events")
+        .desc("Total num of wrapped function events(zytest)")
+        .flags(Stats::display)
+        .unit(statistics::units::Count::get())
+        .prereq(totalWrappedFunctionEvents);
         totalCpuTickScheduledEvents
         .name("eventq.total_scheduled_events.cpu.tick")
         .desc("Total num of cpu tick events(zytest)")
         .unit(statistics::units::Count::get())
         .flags(Stats::display)
         .prereq(totalCpuTickScheduledEvents);
+        totalAtomicCpuTickScheduledEvents
+        .name("eventq.total_scheduled_events.atomic.cpu.tick")
+        .desc("Total num of atomic cpu tick events(zytest)")
+        .unit(statistics::units::Count::get())
+        .flags(Stats::display)
+        .prereq(totalAtomicCpuTickScheduledEvents);
+        totalRTCEvents
+        .name("eventq.total_rtc_events")
+        .desc("Total num of RTCEvent(zytest)")
+        .unit(statistics::units::Count::get())
+        .flags(Stats::display)
+        .prereq(totalRTCEvents);
+        totalRTCTickEvents
+        .name("eventq.total_rtc_tick_events")
+        .desc("Total num of RTCTickEvent(zytest)")
+        .unit(statistics::units::Count::get())
+        .flags(Stats::display)
+        .prereq(totalRTCTickEvents);
     }
 
     /**
@@ -792,8 +820,22 @@ class EventQueue
         event->setWhen(when, this);
 
         // add statistics
-        if (event->name().find("tick.wrapped_function_event") != std::string::npos) {
-            totalCpuTickScheduledEvents++;
+        if (std::string(event->description())=="EventFunctionWrapped") {
+            totalWrappedFunctionEvents++;
+            if (event->name().find("tick.wrapped_function_event") != std::string::npos){
+                totalCpuTickScheduledEvents++;
+                if (std::string(event->name())=="AtomicSimpleCPU tick.wrapped_function_event") {
+                    totalAtomicCpuTickScheduledEvents++;
+                }
+            }
+        }
+        else if (std::string(event->description())=="RTC clock tick"){
+            totalRTCTickEvents++;
+        }
+        else if (std::string(event->description()) == "RTC interrupt"){
+            totalRTCEvents++;
+        }
+        else{
         }
         totalScheduledEvents++;
 
@@ -815,6 +857,8 @@ class EventQueue
         if (debug::Event)
             event->trace("scheduled");
     }
+
+
 
     /**
      * Deschedule the specified event. Should be called only from the owning
