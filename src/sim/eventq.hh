@@ -767,10 +767,12 @@ class EventQueue
         .name("eventq.total_scheduled_events")
         .desc("Total num of events(zytest)")
         .flags(Stats::display)
+        .unit(statistics::units::Count::get())
         .prereq(totalScheduledEvents);
         totalCpuTickScheduledEvents
         .name("eventq.total_scheduled_events.cpu.tick")
         .desc("Total num of cpu tick events(zytest)")
+        .unit(statistics::units::Count::get())
         .flags(Stats::display)
         .prereq(totalCpuTickScheduledEvents);
     }
