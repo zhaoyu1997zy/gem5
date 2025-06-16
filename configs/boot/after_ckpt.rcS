@@ -1,0 +1,6 @@
+echo "test"
+cat /tmp/runscript
+echo "end"
+echo "success"
+/bin/sh
+echo "asdfljads;jf"

@@ -129,8 +129,16 @@ def build_test_system(np):
     elif args.kernel is not None:
         test_sys.workload.object_file = binary(args.kernel)
 
-    if args.script is not None:
+    # if args.script is not None:
+    #     test_sys.readfile = args.script
+
+    # Only apply --script if this is not a restored checkpoint
+    if not args.checkpoint_restore and args.script:
         test_sys.readfile = args.script
+
+    # Overwrite with readfile if provided (e.g., after checkpoint)
+    if args.readfile:
+        test_sys.readfile = args.readfile
 
     if args.lpae:
         test_sys.have_lpae = True
@@ -366,7 +374,7 @@ elif len(bm) == 1:
     print(f"dir:{dir(root)}")
     print(f"full_system:{root.full_system}, system:{root.system}")
     import time
-    time.sleep(5)
+    time.sleep(1)
     for obj in root.descendants():
         print(f"obj:{obj}")
 else:
@@ -405,6 +413,10 @@ if buildEnv['TARGET_ISA'] == "arm" and not args.bare_metal \
             sys.workload.dtb_filename = \
                 os.path.join(m5.options.outdir, '%s.dtb' % sysname)
             sys.generateDtb(sys.workload.dtb_filename)
+print(args.checkpoint_restore)
+print(test_sys.readfile)
 
+import time
+time.sleep(3)
 Simulation.setWorkCountOptions(test_sys, args)
 Simulation.run(args, root, test_sys, FutureClass)
