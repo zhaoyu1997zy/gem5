@@ -232,16 +232,16 @@ def build_test_system(np):
     else:
 
         print("debug-zy, not kvm")
-        import time
-        time.sleep(2)
-        for i,cpu in enumerate(test_sys.cpu):
-            # Child objects usually inherit the parent's event
-            # queue. Override that and use the same event queue for
-            # all devices.
-            for obj in cpu.descendants():
-                obj.eventq_index = 0
-            cpu.eventq_index = i + 1
-            print(f"debug-zy:cpu:{cpu}, index:{cpu.eventq_index}")
+        # import time
+        # time.sleep(2)
+        # for i,cpu in enumerate(test_sys.cpu):
+        #     # Child objects usually inherit the parent's event
+        #     # queue. Override that and use the same event queue for
+        #     # all devices.
+        #     for obj in cpu.descendants():
+        #         obj.eventq_index = 0
+        #     cpu.eventq_index = i + 1
+        #     print(f"debug-zy:cpu:{cpu}, index:{cpu.eventq_index}")
 
     return test_sys
 
@@ -379,8 +379,8 @@ if ObjectList.is_kvm_cpu(TestCPUClass) or \
     # Uses gem5's parallel event queue feature
     # Note: The simulator is quite picky about this number!
     root.sim_quantum = int(1e9) # 1 ms
-else:
-    root.sim_quantum = int(1e9)
+# else:
+#     root.sim_quantum = int(1e9)
 
 if args.timesync:
     root.time_sync_enable = True
