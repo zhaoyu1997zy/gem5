@@ -1,0 +1,22 @@
+m5 dumpstats
+
+# prepare the env
+
+mkdir /mnt/parsec
+mount /dev/hdb /mnt/parsec
+cd /mnt/parsec/parsec-3.0.bak_0606
+
+m5 dumpstats
+
+# run parsec bmk
+
+bmk_to_run="blackscholes facesim fluidanimate bodytrack ferret freqmine swaptions x264"
+for bmk in $bmk_to_run
+do
+    cmdline="./bin/parsecmgmt -a run -p $bmk -i simlarge -n 128"
+    echo "RUN $cmdline !"
+    $cmdline
+    echo "RUN $cmdline SUCCESS !"
+done
+
+echo "Run bmks:$bmk_to_run Success!"
