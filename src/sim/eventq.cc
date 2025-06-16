@@ -65,6 +65,11 @@ getEventQueue(uint32_t index)
         numMainEventQueues++;
         mainEventQueue.push_back(
             new EventQueue(csprintf("MainEventQueue-%d", index)));
+        if (index == 0){
+            // Call regStats() the first time mainEventQueue[0] is created
+            std::cout << "debug-zy, Call regStats()" << std::endl;
+            mainEventQueue.back()->regStats();
+        }
     }
 
     return mainEventQueue[index];

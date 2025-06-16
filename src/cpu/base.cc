@@ -487,6 +487,7 @@ BaseCPU::findContext(ThreadContext *tc)
 void
 BaseCPU::activateContext(ThreadID thread_num)
 {
+    // std::cout << "debug-zy, in func BaseCPU::activeContext(), thread_num=" << thread_num << std::endl;
     DPRINTF(Thread, "activate contextId %d\n",
             threadContexts[thread_num]->contextId());
     // Squash enter power gating event while cpu gets activated

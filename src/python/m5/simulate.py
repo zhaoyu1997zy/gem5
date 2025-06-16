@@ -156,6 +156,9 @@ def simulate(*args, **kwargs):
 
     if need_startup:
         root = objects.Root.getInstance()
+        print("debug-zy, obj in root.descendants()")
+        for obj in root.descendants():
+            print(f"obj:{obj}")
         for obj in root.descendants(): obj.startup()
         need_startup = False
 
