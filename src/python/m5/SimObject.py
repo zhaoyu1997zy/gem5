@@ -1534,17 +1534,13 @@ class SimObject(object, metaclass=MetaSimObject):
     # that when we instantiate all the parameter objects we're still
     # inside the configuration hierarchy.
     def adoptOrphanParams(self):
-        print("debug-zy, in func adoptOrphanParams:")
         for key,val in self._values.items():
-            print(f"key:{key}, val:{val}")
             if not isSimObjectVector(val) and isSimObjectSequence(val):
-                print("debug-zy, need to be converted")
                 # need to convert raw SimObject sequences to
                 # SimObjectVector class so we can call has_parent()
                 val = SimObjectVector(val)
                 self._values[key] = val
             if isSimObjectOrVector(val) and not val.has_parent():
-                print("debug-zy, has no parent")
                 warn("%s adopting orphan SimObject param '%s'", self, key)
                 self.add_child(key, val)
 
