@@ -871,17 +871,22 @@ class EventQueue
         event->dump();
         assert(event->scheduled());
         assert(event->initialized());
-        assert(!inParallelMode || this == curEventQueue());
+        if (inParallelMode && this != curEventQueue()){
+            safeDeschedule(event);
+        }else{
+            assert(!inParallelMode || this == curEventQueue());
 
-        remove(event);
+            remove(event);
 
-        event->flags.clear(Event::Squashed);
-        event->flags.clear(Event::Scheduled);
+            event->flags.clear(Event::Squashed);
+            event->flags.clear(Event::Scheduled);
 
-        if (debug::Event)
-            event->trace("descheduled");
+            if (debug::Event)
+                event->trace("descheduled");
 
-        event->release();
+            event->release();
+        }
+        
     }
 
     /**
@@ -1046,6 +1051,8 @@ class EventQueue
         while (!empty())
             deschedule(getHead());
     }
+
+   void safeDeschedule(Event *targetEvent);
 };
 
 inline void

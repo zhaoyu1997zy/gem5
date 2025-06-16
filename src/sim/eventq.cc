@@ -447,4 +447,24 @@ EventQueue::handleAsyncInsertions()
     async_queue_mutex.unlock();
 }
 
+/**
+ * When deschedule a event not from the owning thread,
+ * create a new Event to do this job.
+ */
+void EventQueue::safeDeschedule(Event *targetEvent){
+    std::cout << "debug-zy, in func safeDeschedule" << std::endl;
+    auto *queue = targetEvent -> queue;
+    auto *descheduleEvent = new EventFunctionWrapper(
+        [targetEvent](){
+            if (targetEvent->scheduled()){
+                targetEvent->queue->deschedule(targetEvent);
+            }
+        },
+        "cancleScheduledEvent"
+    );
+    if(!descheduleEvent->scheduled()){
+        queue->schedule(descheduleEvent, queue->getCurTick());
+    }
+}
+
 } // namespace gem5
