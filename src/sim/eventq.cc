@@ -447,6 +447,28 @@ EventQueue::handleAsyncInsertions()
     async_queue_mutex.unlock();
 }
 
+void
+EventQueue::asyncRemove(Event *event)
+{
+    async_removal_queue_mutex.lock();
+    async_removal_queue.push_back(event);
+    async_removal_queue_mutex.unlock();
+}
+
+void
+EventQueue::handleAsyncRemovals()
+{
+    assert(this == curEventQueue());
+
+    async_removal_queue_mutex.lock();
+
+    while(!async_removal_queue.empty()){
+        remove(async_removal_queue.front());
+        async_removal_queue.pop_front();
+    }
+    async_removal_queue_mutex.unlock();
+}
+
 /**
  * When deschedule a event not from the owning thread,
  * create a new Event to do this job.
@@ -463,6 +485,7 @@ void EventQueue::safeDeschedule(Event *targetEvent){
         "cancleScheduledEvent"
     );
     if(!descheduleEvent->scheduled()){
+        descheduleEvent->dump();
         queue->schedule(descheduleEvent, queue->getCurTick());
     }
 }

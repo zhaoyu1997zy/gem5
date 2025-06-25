@@ -182,6 +182,7 @@ doSimLoop(EventQueue *eventq)
     // set the per thread current eventq pointer
     curEventQueue(eventq);
     eventq->handleAsyncInsertions();
+    eventq->handleAsyncRemovals();
 
     while (1) {
         // there should always be at least one event (the SimLoopExitEvent

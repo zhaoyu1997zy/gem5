@@ -643,6 +643,9 @@ class EventQueue
     //! List of events added by other threads to this event queue.
     std::list<Event*> async_queue;
 
+    UncontendedMutex async_removal_queue_mutex;
+    std::list<Event*> async_removal_queue;
+
     /**
      * Lock protecting event handling.
      *
@@ -674,6 +677,10 @@ class EventQueue
     //! are added to main event queue later. Threads, other than the
     //! owning thread, should call this function instead of insert().
     void asyncInsert(Event *event);
+
+    // Function for adding events to the async removal queue. The added events
+    // are removed from main event queue later.
+    void asyncRemove(Event *event);
 
     EventQueue(const EventQueue &);
 
@@ -859,7 +866,6 @@ class EventQueue
     }
 
 
-
     /**
      * Deschedule the specified event. Should be called only from the owning
      * thread.
@@ -871,22 +877,20 @@ class EventQueue
         event->dump();
         assert(event->scheduled());
         assert(event->initialized());
+
         if (inParallelMode && this != curEventQueue()){
-            safeDeschedule(event);
+            asyncRemove(event);
         }else{
             assert(!inParallelMode || this == curEventQueue());
-
             remove(event);
-
-            event->flags.clear(Event::Squashed);
-            event->flags.clear(Event::Scheduled);
-
-            if (debug::Event)
-                event->trace("descheduled");
-
-            event->release();
         }
-        
+        event->flags.clear(Event::Squashed);
+        event->flags.clear(Event::Scheduled);
+
+        if (debug::Event)
+            event->trace("descheduled");
+
+        event->release();  
     }
 
     /**
@@ -989,6 +993,11 @@ class EventQueue
      * Function for moving events from the async_queue to the main queue.
      */
     void handleAsyncInsertions();
+
+    /**
+     * Function for moving events from the async_remove_queue out of the main queue.
+     */
+    void handleAsyncRemovals();
 
     /**
      *  Function to signal that the event loop should be woken up because

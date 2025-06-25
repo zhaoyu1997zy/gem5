@@ -152,6 +152,7 @@ GlobalSyncEvent::BarrierEvent::process()
     // to finish before continuing
     globalBarrier();
     curEventQueue()->handleAsyncInsertions();
+    curEventQueue()->handleAsyncRemovals();
 }
 
 void
