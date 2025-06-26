@@ -593,7 +593,7 @@ IdeDisk::startDma(const uint32_t &prdTableBase)
     dmaState = Dma_Transfer;
 
     // schedule dma transfer (doDmaTransfer)
-    schedule(dmaTransferEvent, curTick() + 1);
+    schedule(dmaTransferEvent, eventq->getCurTick() + 1);
 }
 
 void
