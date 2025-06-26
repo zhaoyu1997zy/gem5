@@ -188,6 +188,13 @@ doSimLoop(EventQueue *eventq)
         // there should always be at least one event (the SimLoopExitEvent
         // we just scheduled) in the queue
         assert(!eventq->empty());
+        if (curTick() > eventq->nextTick()){
+            std::cout << "debug-zy, in func doSimLoop" << std::endl;
+            eventq->getHead()->dump();
+            eventq->dump();
+            std::cout << "curTick()=" << curTick() 
+            << ", curEventQueue-tick:" << _curEventQueue->getCurTick() << std::endl;
+        }
         assert(curTick() <= eventq->nextTick() &&
                "event scheduled in the past");
 

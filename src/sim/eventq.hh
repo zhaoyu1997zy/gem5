@@ -820,6 +820,11 @@ class EventQueue
     void
     schedule(Event *event, Tick when, bool global=false)
     {
+        if (when < getCurTick()){
+            std::cout << "debug-zy, in func schedule" << "when:" << when << "getCurTick():" << getCurTick()
+            << "thread-curTick:" << curTick() << std::endl;
+            event->dump();
+        }
         assert(when >= getCurTick());
         assert(!event->scheduled());
         assert(event->initialized());

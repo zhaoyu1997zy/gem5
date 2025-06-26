@@ -101,6 +101,22 @@ class Clocked
         tick += elapsedCycles * clockPeriod();
     }
 
+    void
+    update(Tick specCurTick) const{
+        if (tick >= specCurTick){
+            return;
+        }
+        tick += clockPeriod();
+        ++cycle;
+
+        if (tick >= specCurTick){
+            return;
+        }
+        Cycles elapsedCycles(divCeil(specCurTick - tick, clockPeriod()));
+        cycle += elapsedCycles;
+        tick += elapsedCycles * clockPeriod();
+    }
+
     /**
      * The clock domain this clocked object belongs to
      */
@@ -182,6 +198,16 @@ class Clocked
         // figure out when this future cycle is
         return tick + clockPeriod() * cycles;
     }
+
+    
+    Tick
+    clockEdge_spec_curTick(Cycles cycles=Cycles(0), Tick specCurTick=0) const
+    {
+        update(specCurTick);
+
+        return tick + clockPeriod() * cycles;
+    }
+
 
     /**
      * Determine the current cycle, corresponding to a tick aligned to
