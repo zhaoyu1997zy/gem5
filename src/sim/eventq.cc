@@ -429,13 +429,10 @@ void
 EventQueue::asyncInsert(Event *event)
 {
     async_queue_mutex.lock();
-    async_removal_queue_mutex.lock();
 
     async_queue.push_back(event);
-    async_removal_queue.remove(event);
 
     async_queue_mutex.unlock();
-    async_removal_queue_mutex.unlock();
 }
 
 void
@@ -458,8 +455,12 @@ EventQueue::asyncRemove(Event *event)
     async_removal_queue_mutex.lock();
     async_queue_mutex.lock();
 
-    async_removal_queue.push_back(event);
-    async_queue.remove(event);
+    if (std::find(async_queue.begin(), async_queue.end(), event) != async_queue.end()){
+        async_queue.remove(event);
+    }
+    else{
+        async_removal_queue.push_back(event);
+    }
 
     async_removal_queue_mutex.unlock();
     async_queue_mutex.unlock();

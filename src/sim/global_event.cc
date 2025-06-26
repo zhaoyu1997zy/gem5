@@ -151,8 +151,8 @@ GlobalSyncEvent::BarrierEvent::process()
     // second barrier to force all queues to wait for event processing
     // to finish before continuing
     globalBarrier();
-    curEventQueue()->handleAsyncInsertions();
     curEventQueue()->handleAsyncRemovals();
+    curEventQueue()->handleAsyncInsertions();
 }
 
 void
