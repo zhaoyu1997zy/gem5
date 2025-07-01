@@ -393,7 +393,7 @@ if ObjectList.is_kvm_cpu(TestCPUClass) or \
     root.sim_quantum = int(1e9) # 1 ms
 else:
     # root.sim_quantum = m5.ticks.fromSeconds(m5.util.convert.anyToLatency("500us"))
-    root.sim_quantum = int(1e9)
+    root.sim_quantum = int(1e7)
 
 if args.timesync:
     root.time_sync_enable = True

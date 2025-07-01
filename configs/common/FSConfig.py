@@ -632,6 +632,7 @@ def makeLinuxX86System(mem_mode, numCPUs=1, mdesc=None, Ruby=False,
     # Command line
     if not cmdline:
         cmdline = 'earlyprintk=ttyS0 console=ttyS0 lpj=7999923 root=/dev/hda1'
+        cmdline += " trace_clock=local"
     self.workload.command_line = fillInCmdline(mdesc, cmdline)
     return self
 
