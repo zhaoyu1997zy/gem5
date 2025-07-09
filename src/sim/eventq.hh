@@ -646,6 +646,8 @@ class EventQueue
     UncontendedMutex async_removal_queue_mutex;
     std::list<Event*> async_removal_queue;
 
+    Tick _nextBarrierWhen;
+
     /**
      * Lock protecting event handling.
      *
@@ -929,6 +931,14 @@ class EventQueue
 
     Tick nextTick() const { return head->when(); }
     void setCurTick(Tick newVal) { _curTick = newVal; }
+
+    void setNextBarrierWhen(Tick newVal) {
+        _nextBarrierWhen = newVal;
+    }
+
+    Tick getNextBarrierWhen() const {
+        return _nextBarrierWhen;
+    }
 
     /**
      * While curTick() is useful for any object assigned to this event queue,

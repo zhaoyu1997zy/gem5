@@ -248,6 +248,9 @@ def build_test_system(np):
             print(f"debug-zy:i:{i}， cpu:{cpu}")
             time.sleep(1)
             cpu.eventq_index = 1
+            # for obj in cpu.descendants():
+            #     obj.eventq_index = 1
+            #     print(f"debug-zy:set {obj} eventq-1")
 
         # print("debug-zy, not kvm")
         # import time
@@ -260,7 +263,12 @@ def build_test_system(np):
         #         obj.eventq_index = 0
         #     cpu.eventq_index = 1
         #     print(f"debug-zy:cpu:{cpu}, index:{cpu.eventq_index}")
-
+    # print("[debug-zy] checking membus snoop_filter presence...")
+    # print(f"[debug-zy] test_sys.membus: {test_sys.membus}")
+    # print(f"[debug-zy] snoop_filter: {test_sys.membus.snoop_filter}")
+    # test_sys.membus.snoop_filter = SnoopFilter(max_capacity='0B')
+    # test_sys.membus = NoncoherentXBar()
+    # print(f"[debug-zy] snoop_filter: {test_sys.membus.snoop_filter}")
     return test_sys
 
 def build_drive_system(np):
@@ -394,6 +402,10 @@ if ObjectList.is_kvm_cpu(TestCPUClass) or \
 else:
     # root.sim_quantum = m5.ticks.fromSeconds(m5.util.convert.anyToLatency("500us"))
     root.sim_quantum = int(1e7)
+
+# root.system.membus.snoop_filter = SnoopFilter(max_capacity='32MiB')
+# root.system.membus.snoop_filter = None
+
 
 if args.timesync:
     root.time_sync_enable = True

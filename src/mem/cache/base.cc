@@ -351,7 +351,9 @@ BaseCache::recvTimingReq(PacketPtr pkt)
 {
     // anything that is merely forwarded pays for the forward latency and
     // the delay provided by the crossbar
-    Tick forward_time = clockEdge(forwardLatency) + pkt->headerDelay;
+    
+    // Tick forward_time = clockEdge(forwardLatency) + pkt->headerDelay;
+    Tick forward_time = clockEdge_spec_curTick(forwardLatency, eventq->getNextBarrierWhen()) + pkt->headerDelay;
 
     Cycles lat;
     CacheBlk *blk = nullptr;

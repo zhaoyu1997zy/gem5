@@ -79,6 +79,7 @@ void BaseGlobalEvent::schedule(Tick when)
 
     for (int i = 0; i < numMainEventQueues; ++i) {
         mainEventQueue[i]->schedule(barrierEvent[i], when, true);
+        mainEventQueue[i]->setNextBarrierWhen(when);
     }
 
     globalQMutex.unlock();

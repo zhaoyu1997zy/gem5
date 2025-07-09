@@ -229,9 +229,15 @@ AtomicSimpleCPU::activateContext(ThreadID thread_num)
                                  threadInfo[thread_num]->thread->lastSuspend);
     baseStats.numCycles += delta;
 
+
     if (!tickEvent.scheduled()) {
         //Make sure ticks are still on multiples of cycles
-        schedule(tickEvent, clockEdge_spec_curTick(Cycles(0), eventq->getCurTick()));
+        if (eventq == _curEventQueue){
+            schedule(tickEvent, clockEdge(Cycles(0)));
+        }
+        else{
+            schedule(tickEvent, clockEdge_spec_curTick(Cycles(0), eventq->getNextBarrierWhen()));
+        }
     }
     _status = BaseSimpleCPU::Running;
     if (std::find(activeThreads.begin(), activeThreads.end(), thread_num) ==

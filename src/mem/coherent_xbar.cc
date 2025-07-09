@@ -52,6 +52,9 @@
 #include "debug/CoherentXBar.hh"
 #include "sim/system.hh"
 
+#include <sys/syscall.h>
+#include <unistd.h> 
+
 namespace gem5
 {
 
@@ -188,7 +191,10 @@ CoherentXBar::recvTimingReq(PacketPtr pkt, PortID cpu_side_port_id)
     calcPacketTiming(pkt, xbar_delay);
 
     // determine how long to be crossbar layer is busy
-    Tick packetFinishTime = clockEdge(headerLatency) + pkt->payloadDelay;
+
+    // Tick packetFinishTime = clockEdge(headerLatency) + pkt->payloadDelay;
+    
+    Tick packetFinishTime = clockEdge_spec_curTick(headerLatency, eventq->getNextBarrierWhen()) + pkt->payloadDelay;
 
     // is this the destination point for this packet? (e.g. true if
     // this xbar is the PoC for a cache maintenance operation to the
@@ -757,8 +763,12 @@ CoherentXBar::recvAtomicBackdoor(PacketPtr pkt, PortID cpu_side_port_id,
     if (snoop_caches) {
         // forward to all snoopers but the source
         std::pair<MemCmd, Tick> snoop_result;
+        auto thread_id = "[thread:" + std::to_string(syscall(SYS_gettid)) + "]";
+        std::cout << thread_id << "name:" << name() << std::endl;
         if (snoopFilter) {
             // check with the snoop filter where to forward this packet
+            std::cout << thread_id << "debug-zy, in func CoherentXBar::recvAtomicBackdoor, called lookupRequest\n"
+            << "pkt->getaddr():0x" << std::hex << pkt->getAddr() << std::dec << std::endl;
             auto sf_res =
                 snoopFilter->lookupRequest(pkt,
                 *cpuSidePorts [cpu_side_port_id]);
@@ -771,6 +781,8 @@ CoherentXBar::recvAtomicBackdoor(PacketPtr pkt, PortID cpu_side_port_id,
             // operation, and do it even before sending it onwards to
             // avoid situations where atomic upward snoops sneak in
             // between and change the filter state
+            std::cout << thread_id << "debug-zy, in func CoherentXBar::recvAtomicBackdoor, called finishRequest\n"
+            << "pkt->getaddr():0x" << std::hex << pkt->getAddr() << std::dec << std::endl;
             snoopFilter->finishRequest(false, pkt->getAddr(), pkt->isSecure());
 
             if (pkt->isEviction()) {
