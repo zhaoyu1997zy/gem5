@@ -116,6 +116,15 @@ Event::insertBefore(Event *event, Event *curr)
 void
 EventQueue::insert(Event *event)
 {
+    if (event->when() < getCurTick()){
+        std::cout << "debug-zy, in func EventQueue::insert:\n"
+        << "getCurTick():" << getCurTick() << std::endl;
+        event->dump();
+        Tick when = getNextBarrierWhen() + 1;
+        event->setWhen(when, event->queue);
+        std::cout << "change to when:" << when << std::endl;
+    }
+    
     // Deal with the head case
     if (!head || *event <= *head) {
         head = Event::insertBefore(event, head);
@@ -190,8 +199,36 @@ EventQueue::remove(Event *event)
         curr = curr->nextBin;
     }
 
-    if (!curr || *curr != *event)
+    if (!curr || *curr != *event){
+        std::cout << "debug-zy, in func EventQueue::remove, event not found\n";
+        if (curr) {
+            std::cout << "Top of candidate bin: " << curr->name()
+                      << ", when: " << curr->when() << std::endl;
+        } else {
+            std::cout << "Bin list is empty or event is beyond all known bins.\n";
+        }
+    
+        // 遍历整个队列，尝试打印已存在事件信息以辅助排查
+        Event* tmp = head;
+        std::cout << "Scanning entire event queue for context...\n";
+        while (tmp) {
+            std::cout << "  Event: " << tmp->name() << ", when: " << tmp->when()
+                      << ", scheduled: " << tmp->scheduled() << std::endl;
+            tmp = tmp->nextBin;
+        }
+        // 打印异步队列和异步删除队列内容
+        std::cout << "print event in async_queue...\n==============================================\n";
+        for (auto ev : async_queue){
+            ev->dump();
+        }
+        std::cout << "print event in async_removal_queue...\n==============================================\n";
+        for (auto ev : async_removal_queue){
+            ev->dump();
+        }
+        std::cout << "print done..." << std::endl;
         panic("event not found!");
+    }
+        
 
     // curr points to the top item of the the correct 'in bin' list, when
     // we remove an item, it returns the new top item (which may be

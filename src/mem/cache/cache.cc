@@ -291,7 +291,15 @@ Cache::recvTimingSnoopResp(PacketPtr pkt)
     // upper level cache.
     // To pay the delay that occurs if the packet comes from the bus,
     // we charge also headerDelay.
-    Tick snoop_resp_time = clockEdge(forwardLatency) + pkt->headerDelay;
+    Tick snoop_resp_time;
+    if (eventq == _curEventQueue){
+        snoop_resp_time = clockEdge(forwardLatency) + pkt->headerDelay;
+    }
+    else{
+        snoop_resp_time = clockEdge_spec_curTick(forwardLatency, eventq->getNextBarrierWhen()) + pkt->headerDelay;
+    }
+    
+
     // Reset the timing of the packet.
     pkt->headerDelay = pkt->payloadDelay = 0;
     memSidePort.schedTimingSnoopResp(pkt, snoop_resp_time);
@@ -772,11 +780,16 @@ Cache::serviceMSHRTargets(MSHR *mshr, const PacketPtr pkt, CacheBlk *blk)
                 // responseLatency is the latency of the return path
                 // from lower level caches/memory to an upper level cache or
                 // the core.
-                // completion_time += clockEdge(responseLatency) +
-                //     (transfer_offset ? pkt->payloadDelay : 0);
-                completion_time += clockEdge_spec_curTick(responseLatency, eventq->getNextBarrierWhen()) +
-                (transfer_offset ? pkt->payloadDelay : 0);
 
+                if (eventq == _curEventQueue){
+                    completion_time += clockEdge(responseLatency) +
+                        (transfer_offset ? pkt->payloadDelay : 0);
+                }
+                else{
+                    completion_time += clockEdge_spec_curTick(responseLatency, eventq->getNextBarrierWhen()) +
+                        (transfer_offset ? pkt->payloadDelay : 0);
+                }
+                
                 assert(!tgt_pkt->req->isUncacheable());
 
                 assert(tgt_pkt->req->requestorId() < system->maxRequestors());
@@ -791,8 +804,15 @@ Cache::serviceMSHRTargets(MSHR *mshr, const PacketPtr pkt, CacheBlk *blk)
                 // responseLatency is the latency of the return path
                 // from lower level caches/memory to an upper level cache or
                 // the core.
-                completion_time += clockEdge(responseLatency) +
-                    pkt->payloadDelay;
+                if (eventq == _curEventQueue){
+                    completion_time += clockEdge(responseLatency) +
+                        pkt->payloadDelay;
+                }
+                else{
+                    completion_time += clockEdge_spec_curTick(responseLatency, eventq->getNextBarrierWhen()) +
+                        pkt->payloadDelay;
+                }
+
                 tgt_pkt->req->setExtraData(0);
             } else {
                 if (is_invalidate && blk && blk->isValid()) {
@@ -809,8 +829,15 @@ Cache::serviceMSHRTargets(MSHR *mshr, const PacketPtr pkt, CacheBlk *blk)
                 // not a cache fill, just forwarding response
                 // responseLatency is the latency of the return path
                 // from lower level cahces/memory to the core.
-                completion_time += clockEdge(responseLatency) +
-                    pkt->payloadDelay;
+
+                if (eventq == _curEventQueue){
+                    completion_time += clockEdge(responseLatency) +
+                        pkt->payloadDelay;
+                }
+                else{
+                    completion_time += clockEdge_spec_curTick(responseLatency, eventq->getNextBarrierWhen()) +
+                        pkt->payloadDelay;
+                }
                 if (!is_error) {
                     if (pkt->isRead()) {
                         // sanity check
@@ -974,7 +1001,15 @@ Cache::doTimingSupplyResponse(PacketPtr req_pkt, const uint8_t *blk_data,
     // Here we consider forward_time, paying for just forward latency and
     // also charging the delay provided by the xbar.
     // forward_time is used as send_time in next allocateWriteBuffer().
-    Tick forward_time = clockEdge(forwardLatency) + pkt->headerDelay;
+    Tick forward_time;
+    if (eventq == _curEventQueue){
+        forward_time = clockEdge(forwardLatency) + pkt->headerDelay;
+    }
+    else{
+        forward_time = clockEdge_spec_curTick(forwardLatency, eventq->getNextBarrierWhen()) + pkt->headerDelay;
+    }
+    
+
     // Here we reset the timing of the packet.
     pkt->headerDelay = pkt->payloadDelay = 0;
     DPRINTF(CacheVerbose, "%s: created response: %s tick: %lu\n", __func__,
@@ -1069,8 +1104,17 @@ Cache::handleSnoop(PacketPtr pkt, CacheBlk *blk, bool is_timing,
             if (is_timing) {
                 // anything that is merely forwarded pays for the forward
                 // latency and the delay provided by the crossbar
-                Tick forward_time = clockEdge(forwardLatency) +
+
+                Tick forward_time;
+                if (eventq == _curEventQueue){
+                    forward_time = clockEdge(forwardLatency) +
+                        pkt->headerDelay;
+                }
+                else{
+                    forward_time = clockEdge_spec_curTick(forwardLatency, eventq->getNextBarrierWhen()) +
                     pkt->headerDelay;
+                }
+
                 doWritebacks(writebacks, forward_time);
             } else {
                 doWritebacksAtomic(writebacks);

@@ -50,10 +50,14 @@
 #include <sys/syscall.h>
 #include <unistd.h> 
 
+#include <thread>
+
 namespace gem5
 {
 
 const int SnoopFilter::SNOOP_MASK_SIZE;
+
+thread_local std::unique_ptr<SnoopFilter::ReqLookupResult> SnoopFilter::reqLookupResult;
 
 void
 SnoopFilter::eraseIfNullEntry(SnoopFilterCache::iterator& sf_it)
@@ -81,18 +85,19 @@ SnoopFilter::lookupRequest(const Packet* cpkt, const ResponsePort&
         line_addr |= LineSecure;
     }
     SnoopMask req_port = portToMask(cpu_side_port);
+    auto& reqLookupResult = getReqLookupResult();
     reqLookupResult.it = cachedLocations.find(line_addr);
     bool is_hit = (reqLookupResult.it != cachedLocations.end());
 
     auto thread_id = "[thread:" + std::to_string(syscall(SYS_gettid)) + "]";
 
-    if (reqLookupResult.it != cachedLocations.end()) {
-        std::cout << thread_id << "------reqLookupResult.it->first:0x" << std::hex << reqLookupResult.it->first << std::dec << "\n";
-    } else {
-        std::cout << thread_id << "------reqLookupResult.it is invalid\n";
-    }
+    // if (reqLookupResult.it != cachedLocations.end()) {
+    //     std::cout << thread_id << "------reqLookupResult.it->first:0x" << std::hex << reqLookupResult.it->first << std::dec << "\n";
+    // } else {
+    //     std::cout << thread_id << "------reqLookupResult.it is invalid\n";
+    // }
 
-    std::cout << thread_id << "------line_addr:0x" << std::hex << line_addr << std::dec << std::endl;
+    // std::cout << thread_id << "------line_addr:0x" << std::hex << line_addr << std::dec << std::endl;
 
     // If the snoop filter has no entry, and we should not allocate,
     // do not create a new snoop filter entry, simply return a NULL
@@ -172,6 +177,7 @@ SnoopFilter::lookupRequest(const Packet* cpkt, const ResponsePort&
 void
 SnoopFilter::finishRequest(bool will_retry, Addr addr, bool is_secure)
 {
+    auto& reqLookupResult = getReqLookupResult();
     if (reqLookupResult.it != cachedLocations.end()) {
         // since we rely on the caller, do a basic check to ensure
         // that finishRequest is being called following lookupRequest
@@ -181,20 +187,20 @@ SnoopFilter::finishRequest(bool will_retry, Addr addr, bool is_secure)
         }
         DPRINTF(SnoopFilter, "Expected addr: %#x, actual key: %#x\n",
             line_addr, reqLookupResult.it->first);
-        auto thread_id = "[thread:" + std::to_string(syscall(SYS_gettid)) + "]";
-        std::cout << thread_id << "++++++addr:0x" << std::hex << addr << std::dec << "\n"
-            << thread_id << "++++++reqLookupResult.it->first:0x" << std::hex << reqLookupResult.it->first << std::dec << "\n"
-            << thread_id << "++++++line_addr:0x" << std::hex << line_addr << std::dec << std::endl;
+        // auto thread_id = "[thread:" + std::to_string(syscall(SYS_gettid)) + "]";
+        // std::cout << thread_id << "++++++addr:0x" << std::hex << addr << std::dec << "\n"
+        //     << thread_id << "++++++reqLookupResult.it->first:0x" << std::hex << reqLookupResult.it->first << std::dec << "\n"
+        //     << thread_id << "++++++line_addr:0x" << std::hex << line_addr << std::dec << std::endl;
         
-        if (reqLookupResult.it->first != line_addr){
-            std::cout << thread_id << "reqLookupResult.it->first != line_addr\n"
-            << thread_id << "######reqLookupResult.it->first:0x" << std::hex << reqLookupResult.it->first << std::dec << "\n"
-            << thread_id << "######line_addr:0x" << std::hex << line_addr << std::dec << std::endl;
+        // if (reqLookupResult.it->first != line_addr){
+        //     std::cout << thread_id << "reqLookupResult.it->first != line_addr\n"
+        //     << thread_id << "######reqLookupResult.it->first:0x" << std::hex << reqLookupResult.it->first << std::dec << "\n"
+        //     << thread_id << "######line_addr:0x" << std::hex << line_addr << std::dec << std::endl;
 
-            // std::cout << "debug-zy, re-find reqLookupResult.it" << std::endl;
-            // reqLookupResult.it = cachedLocations.find(line_addr);
-            // assert(reqLookupResult.it != cachedLocations.end());
-        }
+        //     // std::cout << "debug-zy, re-find reqLookupResult.it" << std::endl;
+        //     // reqLookupResult.it = cachedLocations.find(line_addr);
+        //     // assert(reqLookupResult.it != cachedLocations.end());
+        // }
 
         assert(reqLookupResult.it->first == line_addr);
         if (will_retry) {

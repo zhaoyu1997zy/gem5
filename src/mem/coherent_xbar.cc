@@ -191,10 +191,13 @@ CoherentXBar::recvTimingReq(PacketPtr pkt, PortID cpu_side_port_id)
     calcPacketTiming(pkt, xbar_delay);
 
     // determine how long to be crossbar layer is busy
-
-    // Tick packetFinishTime = clockEdge(headerLatency) + pkt->payloadDelay;
-    
-    Tick packetFinishTime = clockEdge_spec_curTick(headerLatency, eventq->getNextBarrierWhen()) + pkt->payloadDelay;
+    Tick packetFinishTime;
+    if (eventq == _curEventQueue){
+        packetFinishTime = clockEdge(headerLatency) + pkt->payloadDelay;
+    }
+    else{
+        packetFinishTime = clockEdge_spec_curTick(headerLatency, eventq->getNextBarrierWhen()) + pkt->payloadDelay;
+    }
 
     // is this the destination point for this packet? (e.g. true if
     // this xbar is the PoC for a cache maintenance operation to the
@@ -216,8 +219,15 @@ CoherentXBar::recvTimingReq(PacketPtr pkt, PortID cpu_side_port_id)
                         src_port->name(), pkt->print());
 
                 // update the layer state and schedule an idle event
-                reqLayers[mem_side_port_id]->failedTiming(src_port,
-                                                        clockEdge(Cycles(1)));
+                if (eventq == _curEventQueue){
+                    reqLayers[mem_side_port_id]->failedTiming(src_port,
+                        clockEdge(Cycles(1)));
+                }
+                else{
+                    reqLayers[mem_side_port_id]->failedTiming(src_port,
+                        clockEdge_spec_curTick(Cycles(1), eventq->getNextBarrierWhen()));
+                }
+
                 return false;
             }
         }
@@ -325,8 +335,15 @@ CoherentXBar::recvTimingReq(PacketPtr pkt, PortID cpu_side_port_id)
                 src_port->name(), pkt->print());
 
         // update the layer state and schedule an idle event
-        reqLayers[mem_side_port_id]->failedTiming(src_port,
-                                                clockEdge(Cycles(1)));
+        if (eventq == _curEventQueue){
+            reqLayers[mem_side_port_id]->failedTiming(src_port,
+                clockEdge(Cycles(1)));
+        }
+        else{
+            reqLayers[mem_side_port_id]->failedTiming(src_port,
+                clockEdge_spec_curTick(Cycles(1), eventq->getNextBarrierWhen()));
+        }
+
     } else {
         // express snoops currently bypass the crossbar state entirely
         if (!is_express_snoop) {
@@ -440,7 +457,13 @@ CoherentXBar::recvTimingReq(PacketPtr pkt, PortID cpu_side_port_id)
         // response is not for this packet (e.g. cache clean operation
         // where both the request and the write packet have to cross
         // the destination xbar before the response is sent.)
-        Tick response_time = clockEdge() + pkt->headerDelay;
+        Tick response_time;
+        if (eventq == _curEventQueue){
+            response_time = clockEdge() + pkt->headerDelay;
+        }
+        else{
+            response_time = clockEdge_spec_curTick(Cycles(0), eventq->getNextBarrierWhen()) + pkt->headerDelay;
+        }
         rsp_pkt->headerDelay = 0;
 
         cpuSidePorts[rsp_port_id]->schedTimingResp(rsp_pkt, response_time);
@@ -485,7 +508,13 @@ CoherentXBar::recvTimingResp(PacketPtr pkt, PortID mem_side_port_id)
     calcPacketTiming(pkt, xbar_delay);
 
     // determine how long to be crossbar layer is busy
-    Tick packetFinishTime = clockEdge(headerLatency) + pkt->payloadDelay;
+    Tick packetFinishTime;
+    if (eventq == _curEventQueue){
+        packetFinishTime = clockEdge(headerLatency) + pkt->payloadDelay;
+    }
+    else{
+        packetFinishTime = clockEdge_spec_curTick(headerLatency, eventq->getNextBarrierWhen()) + pkt->payloadDelay;
+    }
 
     if (snoopFilter && !system->bypassCaches()) {
         // let the snoop filter inspect the response and update its state
@@ -634,7 +663,13 @@ CoherentXBar::recvTimingSnoopResp(PacketPtr pkt, PortID cpu_side_port_id)
     calcPacketTiming(pkt, xbar_delay);
 
     // determine how long to be crossbar layer is busy
-    Tick packetFinishTime = clockEdge(headerLatency) + pkt->payloadDelay;
+    Tick packetFinishTime;
+    if (eventq == _curEventQueue){
+        packetFinishTime = clockEdge(headerLatency) + pkt->payloadDelay;
+    }
+    else{
+        packetFinishTime = clockEdge_spec_curTick(headerLatency, eventq->getNextBarrierWhen()) + pkt->payloadDelay;
+    }
 
     // forward it either as a snoop response or a normal response
     if (forwardAsSnoop) {
@@ -684,8 +719,15 @@ CoherentXBar::recvTimingSnoopResp(PacketPtr pkt, PortID cpu_side_port_id)
         // header latency
         Tick latency = pkt->headerDelay;
         pkt->headerDelay = 0;
-        cpuSidePorts[dest_port_id]->schedTimingResp(pkt,
-                                    curTick() + latency);
+        
+        if (eventq == _curEventQueue) {
+            cpuSidePorts[dest_port_id]->schedTimingResp(pkt,
+                curTick() + latency);
+        }
+        else{
+            cpuSidePorts[dest_port_id]->schedTimingResp(pkt,
+                eventq->getNextBarrierWhen() + latency);
+        }
 
         respLayers[dest_port_id]->succeededTiming(packetFinishTime);
     }
@@ -764,11 +806,11 @@ CoherentXBar::recvAtomicBackdoor(PacketPtr pkt, PortID cpu_side_port_id,
         // forward to all snoopers but the source
         std::pair<MemCmd, Tick> snoop_result;
         auto thread_id = "[thread:" + std::to_string(syscall(SYS_gettid)) + "]";
-        std::cout << thread_id << "name:" << name() << std::endl;
+        // std::cout << thread_id << "name:" << name() << std::endl;
         if (snoopFilter) {
             // check with the snoop filter where to forward this packet
-            std::cout << thread_id << "debug-zy, in func CoherentXBar::recvAtomicBackdoor, called lookupRequest\n"
-            << "pkt->getaddr():0x" << std::hex << pkt->getAddr() << std::dec << std::endl;
+            // std::cout << thread_id << "debug-zy, in func CoherentXBar::recvAtomicBackdoor, called lookupRequest\n"
+            // << "pkt->getaddr():0x" << std::hex << pkt->getAddr() << std::dec << std::endl;
             auto sf_res =
                 snoopFilter->lookupRequest(pkt,
                 *cpuSidePorts [cpu_side_port_id]);
@@ -781,8 +823,8 @@ CoherentXBar::recvAtomicBackdoor(PacketPtr pkt, PortID cpu_side_port_id,
             // operation, and do it even before sending it onwards to
             // avoid situations where atomic upward snoops sneak in
             // between and change the filter state
-            std::cout << thread_id << "debug-zy, in func CoherentXBar::recvAtomicBackdoor, called finishRequest\n"
-            << "pkt->getaddr():0x" << std::hex << pkt->getAddr() << std::dec << std::endl;
+            // std::cout << thread_id << "debug-zy, in func CoherentXBar::recvAtomicBackdoor, called finishRequest\n"
+            // << "pkt->getaddr():0x" << std::hex << pkt->getAddr() << std::dec << std::endl;
             snoopFilter->finishRequest(false, pkt->getAddr(), pkt->isSecure());
 
             if (pkt->isEviction()) {

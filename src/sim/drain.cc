@@ -71,8 +71,11 @@ DrainManager::tryDrain()
 
     DPRINTF(Drain, "Trying to drain %u objects.\n", drainableCount());
     _state = DrainState::Draining;
+    std::cout << "start func DrainManager::tryDrain\n";
     for (auto *obj : _allDrainable) {
+        std::cout << obj << "start drain-----";
         DrainState status = obj->dmDrain();
+        std::cout << obj << "finish drain-----";
         if (debug::Drain && status != DrainState::Drained) {
             Named *temp = dynamic_cast<Named*>(obj);
             if (temp)

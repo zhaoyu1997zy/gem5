@@ -199,6 +199,7 @@ def drain():
     # is because as objects drain they may cause other objects to no
     # longer be drained.
     def _drain():
+        print(f"in func _drain()")
         # Try to drain the system. The drain is successful if all
         # objects are done without simulation. We need to simulate
         # more if not.
@@ -209,6 +210,7 @@ def drain():
         # will not get returned to the user script
         exit_event = _m5.event.simulate()
         while exit_event.getCause() != 'Finished drain':
+            print(f"not finished drain:{exit_event.getCause()}")
             exit_event = simulate()
 
         return False
@@ -229,14 +231,18 @@ def memInvalidate(root):
         obj.memInvalidate()
 
 def checkpoint(dir):
+    print(f"in func checkpoint:")
     root = objects.Root.getInstance()
     if not isinstance(root, objects.Root):
         raise TypeError("Checkpoint must be called on a root object.")
 
+    print("start drain()")
     drain()
+    print("start memWriteback(root)")
     memWriteback(root)
     print("Writing checkpoint")
     _m5.core.serializeAll(dir)
+    print("done checkpoint")
 
 def _changeMemoryMode(system, mode):
     if not isinstance(system, (objects.Root, objects.System)):

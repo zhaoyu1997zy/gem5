@@ -201,6 +201,8 @@ def findCptDir(options, cptdir, testsys):
     return cpt_starttick, checkpoint_dir
 
 def scriptCheckpoints(options, maxtick, cptdir):
+    print(f"in func scriptCheckpoints:")
+    import time
     if options.at_instruction or options.simpoint:
         checkpoint_inst = int(options.take_checkpoints)
 
@@ -224,6 +226,7 @@ def scriptCheckpoints(options, maxtick, cptdir):
             print("Checkpoint written.")
 
     else:
+        print(f"in branch 2:")
         when, period = options.take_checkpoints.split(",", 1)
         when = int(when)
         period = int(period)
@@ -231,17 +234,23 @@ def scriptCheckpoints(options, maxtick, cptdir):
 
         exit_event = m5.simulate(when - m5.curTick())
         exit_cause = exit_event.getCause()
+        print(f"exit_cause:{exit_cause}")
         while exit_cause == "checkpoint":
             exit_event = m5.simulate(when - m5.curTick())
             exit_cause = exit_event.getCause()
-
-        if exit_cause == "simulate() limit reached":
-            m5.checkpoint(joinpath(cptdir, "cpt.%d"))
-            num_checkpoints += 1
+            print(f"exit_event:{exit_event}, exit_cause:{exit_cause}")
 
         sim_ticks = when
-        max_checkpoints = options.max_checkpoints
+        if exit_cause == "simulate() limit reached":
+            print(f"cpt_file: {joinpath(cptdir, f'cpt.{sim_ticks}')}")
+            time.sleep(10)
+            m5.checkpoint(joinpath(cptdir, f'cpt.{sim_ticks}'))
+            num_checkpoints += 1
 
+        
+        max_checkpoints = options.max_checkpoints
+        print(f"num:{num_checkpoints}, max:{max_checkpoints}")
+        time.sleep(10)
         while num_checkpoints < max_checkpoints and \
                 exit_cause == "simulate() limit reached":
             if (sim_ticks + period) > maxtick:
@@ -255,9 +264,11 @@ def scriptCheckpoints(options, maxtick, cptdir):
                 while exit_event.getCause() == "checkpoint":
                     exit_event = m5.simulate(sim_ticks - m5.curTick())
                 if exit_event.getCause() == "simulate() limit reached":
-                    m5.checkpoint(joinpath(cptdir, "cpt.%d"))
+                    print(f"cpt_file2: {joinpath(cptdir, f'cpt.{sim_ticks}')}")
+                    m5.checkpoint(joinpath(cptdir, "cpt.%d"%sim_ticks))
                     num_checkpoints += 1
 
+    sys.exit(0)
     return exit_event
 
 def benchCheckpoints(options, maxtick, cptdir):

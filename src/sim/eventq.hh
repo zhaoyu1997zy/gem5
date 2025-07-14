@@ -826,6 +826,8 @@ class EventQueue
             std::cout << "debug-zy, in func schedule" << "when:" << when << "getCurTick():" << getCurTick()
             << "thread-curTick:" << curTick() << std::endl;
             event->dump();
+            when = getNextBarrierWhen() + 1;
+            std::cout << "change Event when to " << when << std::endl;
         }
         assert(when >= getCurTick());
         assert(!event->scheduled());
@@ -909,19 +911,46 @@ class EventQueue
     void
     reschedule(Event *event, Tick when, bool always=false)
     {
+        // std::cout << "debug-zy, in func reschedule" << std::endl;
+        // event->dump();
+        if (when < getCurTick()){
+            std::cout << "when < getCurTick()" << "when:" << when << " getCurTick():" << getCurTick()
+            << " thread-curTick:" << curTick() << std::endl;
+            when = getNextBarrierWhen() + 1;
+            std::cout << "change Event when to " << when << std::endl;
+            
+        }
         assert(when >= getCurTick());
         assert(always || event->scheduled());
         assert(event->initialized());
-        assert(!inParallelMode || this == curEventQueue());
+        // assert(!inParallelMode || this == curEventQueue());
+
 
         if (event->scheduled()) {
-            remove(event);
+            if (inParallelMode && this != curEventQueue()){
+                asyncRemove(event);
+            }else{
+                // 非跨事件队列场景，如果async_quque中存在event，之前还未加入main-eq，
+                if (std::find(async_queue.begin(), async_queue.end(), event) != async_queue.end()){
+                    async_queue_mutex.lock();
+                    async_queue.remove(event);
+                    async_queue_mutex.unlock();
+                }
+                else{
+                    remove(event);
+                }
+            }
         } else {
             event->acquire();
         }
 
         event->setWhen(when, this);
-        insert(event);
+
+        if (inParallelMode && (this != curEventQueue())) {
+            asyncInsert(event);
+        } else {
+            insert(event);
+        }
         event->flags.clear(Event::Squashed);
         event->flags.set(Event::Scheduled);
 

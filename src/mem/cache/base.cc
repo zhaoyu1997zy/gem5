@@ -351,9 +351,13 @@ BaseCache::recvTimingReq(PacketPtr pkt)
 {
     // anything that is merely forwarded pays for the forward latency and
     // the delay provided by the crossbar
-    
-    // Tick forward_time = clockEdge(forwardLatency) + pkt->headerDelay;
-    Tick forward_time = clockEdge_spec_curTick(forwardLatency, eventq->getNextBarrierWhen()) + pkt->headerDelay;
+    Tick forward_time;
+    if (eventq == _curEventQueue){
+        forward_time = clockEdge(forwardLatency) + pkt->headerDelay;
+    }
+    else{
+        forward_time = clockEdge_spec_curTick(forwardLatency, eventq->getNextBarrierWhen()) + pkt->headerDelay;
+    }
 
     Cycles lat;
     CacheBlk *blk = nullptr;
@@ -409,8 +413,15 @@ BaseCache::recvTimingReq(PacketPtr pkt)
 void
 BaseCache::handleUncacheableWriteResp(PacketPtr pkt)
 {
-    Tick completion_time = clockEdge(responseLatency) +
-        pkt->headerDelay + pkt->payloadDelay;
+    Tick completion_time;
+    if (eventq == _curEventQueue){
+        completion_time = clockEdge(responseLatency) +
+            pkt->headerDelay + pkt->payloadDelay;
+    }
+    else{
+        completion_time = clockEdge_spec_curTick(responseLatency, eventq->getNextBarrierWhen()) +
+            pkt->headerDelay + pkt->payloadDelay;
+    }
 
     // Reset the bus additional time as it is now accounted for
     pkt->headerDelay = pkt->payloadDelay = 0;

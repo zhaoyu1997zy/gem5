@@ -247,7 +247,7 @@ def build_test_system(np):
         for i, cpu in enumerate(test_sys.cpu):
             print(f"debug-zy:i:{i}， cpu:{cpu}")
             time.sleep(1)
-            cpu.eventq_index = 1
+            # cpu.eventq_index = 1
             # for obj in cpu.descendants():
             #     obj.eventq_index = 1
             #     print(f"debug-zy:set {obj} eventq-1")

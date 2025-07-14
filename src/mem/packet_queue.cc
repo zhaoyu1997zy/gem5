@@ -119,8 +119,9 @@ PacketQueue::schedSendTiming(PacketPtr pkt, Tick when)
     // add a very basic sanity check on the port to ensure the
     // invisible buffer is not growing beyond reasonable limits
     if (!_disableSanityCheck && transmitList.size() > 128) {
-        panic("Packet queue %s has grown beyond 128 packets\n",
-              name());
+        std::cout << "panic:Packet queue %s has grown beyond 128 packets -->size:" <<transmitList.size() << " name:" << name() << std::endl;
+        // panic("Packet queue %s has grown beyond 128 packets\n",
+        //       name());
     }
 
     // we should either have an outstanding retry, or a send event
@@ -142,7 +143,10 @@ PacketQueue::schedSendTiming(PacketPtr pkt, Tick when)
             // emplace inserts the element before the position pointed to by
             // the iterator, so advance it one step
             transmitList.emplace(++it, when, pkt);
-            return;
+            if (sendEvent.scheduled()){
+                return;
+            }
+            // return;
         }
     }
     // either the packet list is empty or this has to be inserted
