@@ -80,6 +80,11 @@ DrainManager::tryDrain()
             Named *temp = dynamic_cast<Named*>(obj);
             if (temp)
                 DPRINTF(Drain, "Failed to drain %s\n", temp->name());
+                
+        }
+        if (status != DrainState::Drained){
+            Named *temp = dynamic_cast<Named*>(obj);
+            std::cout << "!!!!!!!!!!Failed to drain: " << temp->name()  << " obj:" << obj << std::endl;
         }
         _count += status == DrainState::Drained ? 0 : 1;
     }

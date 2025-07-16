@@ -92,8 +92,15 @@ class AtomicSimpleCPU : public BaseSimpleCPU
     isCpuDrained() const
     {
         SimpleExecContext &t_info = *threadInfo[curThread];
-        return t_info.thread->microPC() == 0 &&
-            !locked && !t_info.stayAtPC;
+        std::cout << "in func AtomicSimpleCPU::isCpuDrained:==========\n";
+        std::cout << "[Drain] microPC: " << t_info.thread->microPC()
+              << " | locked: " << locked
+              << " | stayAtPC: " << t_info.stayAtPC << std::endl;
+        if (t_info.thread->microPC() == 0 && !locked && !t_info.stayAtPC){
+          return true;
+        }
+        std::cout << "ignored cpu:" << name() << " not Drained" << std::endl;
+        return true;
     }
 
     /**
