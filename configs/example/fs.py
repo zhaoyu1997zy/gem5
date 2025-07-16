@@ -247,11 +247,24 @@ def build_test_system(np):
         for i, cpu in enumerate(test_sys.cpu):
             print(f"debug-zy:i:{i}， cpu:{cpu}")
             time.sleep(1)
-            # cpu.eventq_index = 1
-            # for obj in cpu.descendants():
+            cpu.eventq_index = i+1
+            # cpu.icache.eventq_index = 1
+            # for obj in cpu.icache.descendants():
             #     obj.eventq_index = 1
-            #     print(f"debug-zy:set {obj} eventq-1")
-
+            #     print(f"set eventq_index:{obj}={obj.eventq_index}")
+            # cpu.dcache.eventq_index = 1
+            # for obj in cpu.dcache.descendants():
+            #     obj.eventq_index = 1
+            #     print(f"set eventq_index:{obj}={obj.eventq_index}")
+            for obj in cpu.descendants():
+                obj.eventq_index = i + 1
+                print(f"debug-zy:set {obj} eventq-{i+1}")
+            print(f"L1Cache-eventq:{cpu.icache.eventq_index}, {cpu.dcache.eventq_index}")
+            for obj in cpu.icache.descendants():
+                print(f"icache:{cpu.icache}, obj:{obj}, eventq_index:{obj.eventq_index}")
+            for obj in cpu.dcache.descendants():
+                print(f"dcache:{cpu.dcache}, obj:{obj}, eventq_index:{obj.eventq_index}")
+        time.sleep(3)
         # print("debug-zy, not kvm")
         # import time
         # time.sleep(2)
