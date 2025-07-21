@@ -103,6 +103,13 @@ class SnoopFilter : public SimObject
     {
     }
 
+    // SnoopFilter (const SnoopFilterParams &p) :
+    //     SimObject(p), reqLookupResult(cachedLocations.end()), linesize(p.system->cacheLineSize()), lookupLatency(p.lookup_latency),
+    //     maxEntryCount(p.max_capacity / p.system->cacheLineSize()),
+    //     stats(this)
+    // {
+    // }
+
     /**
      * Init a new snoop filter and tell it about all the cpu_sideports
      * of the enclosing bus.

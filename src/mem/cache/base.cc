@@ -571,6 +571,14 @@ BaseCache::recvTimingResp(PacketPtr pkt)
 Tick
 BaseCache::recvAtomic(PacketPtr pkt)
 {
+    memSidePort.lock();
+    // bool needXbar = xBarNeeded(pkt);
+    // memSidePort.lock();
+    // if (needXbar){
+    //     memSidePort.unlock();
+    //     memSidePort.lock_peer();
+    // }
+
     // should assert here that there are no outstanding MSHRs or
     // writebacks... that would mean that someone used an atomic
     // access in timing mode
@@ -582,6 +590,12 @@ BaseCache::recvAtomic(PacketPtr pkt)
     CacheBlk *blk = nullptr;
     PacketList writebacks;
     bool satisfied = access(pkt, blk, lat, writebacks);
+
+    bool needs_crossbar = !satisfied && pkt->needsResponse();
+    if (needs_crossbar) {
+        memSidePort.unlock();
+        memSidePort.lock_peer();
+    }
 
     if (pkt->isClean() && blk && blk->isSet(CacheBlk::DirtyBit)) {
         // A cache clean opearation is looking for a dirty
@@ -601,6 +615,8 @@ BaseCache::recvAtomic(PacketPtr pkt)
     assert(writebacks.empty());
 
     if (!satisfied) {
+        // memSidePort.unlock();
+        // memSidePort.lock_peer();
         lat += handleAtomicReqMiss(pkt, blk, writebacks);
     }
 
@@ -646,6 +662,25 @@ BaseCache::recvAtomic(PacketPtr pkt)
     }
 
     return lat * clockPeriod();
+
+    // if(needXbar){
+    //     memSidePort.unlock_peer();
+    // }
+    // else{
+    //     memSidePort.unlock();
+    // }
+
+    // if (!satisfied){
+    //     memSidePort.unlock_peer();
+    // }
+    // else{
+    //     memSidePort.unlock();
+    // }
+    if (needs_crossbar) {
+        memSidePort.unlock_peer();
+    }else{
+        memSidePort.unlock();
+    }
 }
 
 void

@@ -70,6 +70,9 @@ namespace gem5
 class CoherentXBar : public BaseXBar
 {
 
+  private:
+    static std::recursive_mutex global_xbar_mutex;
+
   protected:
 
     /**
@@ -103,6 +106,14 @@ class CoherentXBar : public BaseXBar
             : QueuedResponsePort(_name, &_xbar, queue, _id), xbar(_xbar),
               queue(_xbar, *this)
         { }
+
+        void lock() override {
+            CoherentXBar::global_xbar_mutex.lock();   // 锁定xbar
+        }
+        
+        void unlock() override {
+            CoherentXBar::global_xbar_mutex.unlock(); // 解锁xbar
+        }
 
       protected:
 

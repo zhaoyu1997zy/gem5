@@ -97,6 +97,18 @@ class QueuedResponsePort : public ResponsePort
      * functional request. */
     bool trySatisfyFunctional(PacketPtr pkt)
     { return respQueue.trySatisfyFunctional(pkt); }
+
+    void lock_peer() override {
+        getPeer().lock();
+    }
+    
+    void unlock_peer() override {
+        getPeer().unlock();
+    }
+    
+    virtual void lock(){}
+    
+    virtual void unlock(){}
 };
 
 /**
@@ -165,6 +177,18 @@ class QueuedRequestPort : public RequestPort
         return reqQueue.trySatisfyFunctional(pkt) ||
             snoopRespQueue.trySatisfyFunctional(pkt);
     }
+
+  void lock_peer() override {
+      getPeer().lock();
+  }
+  
+  void unlock_peer() override {
+      getPeer().unlock();
+  }
+  
+  virtual void lock(){}
+
+  virtual void unlock(){}
 };
 
 } // namespace gem5

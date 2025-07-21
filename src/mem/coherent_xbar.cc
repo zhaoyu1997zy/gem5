@@ -58,6 +58,8 @@
 namespace gem5
 {
 
+std::recursive_mutex CoherentXBar::global_xbar_mutex;
+
 CoherentXBar::CoherentXBar(const CoherentXBarParams &p)
     : BaseXBar(p), system(p.system), snoopFilter(p.snoop_filter),
       snoopResponseLatency(p.snoop_response_latency),
@@ -1006,7 +1008,10 @@ CoherentXBar::forwardAtomic(PacketPtr pkt, PortID exclude_cpu_side_port_id,
             p->getId() == exclude_cpu_side_port_id)
             continue;
 
+        p->lock_peer();
         Tick latency = p->sendAtomicSnoop(pkt);
+        p->unlock_peer();
+
         fanout++;
 
         // in contrast to a functional access, we have to keep on
