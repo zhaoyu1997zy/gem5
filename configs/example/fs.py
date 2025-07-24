@@ -243,19 +243,10 @@ def build_test_system(np):
         print("gem5 going parallel")
         m5.ticks.fixGlobalFrequency()
         
-        import time
         for i, cpu in enumerate(test_sys.cpu):
             print(f"debug-zy:i:{i}， cpu:{cpu}")
-            time.sleep(1)
             cpu.eventq_index = i+1
-            # cpu.icache.eventq_index = 1
-            # for obj in cpu.icache.descendants():
-            #     obj.eventq_index = 1
-            #     print(f"set eventq_index:{obj}={obj.eventq_index}")
-            # cpu.dcache.eventq_index = 1
-            # for obj in cpu.dcache.descendants():
-            #     obj.eventq_index = 1
-            #     print(f"set eventq_index:{obj}={obj.eventq_index}")
+
             for obj in cpu.descendants():
                 obj.eventq_index = i + 1
                 print(f"debug-zy:set {obj} eventq-{i+1}")
@@ -264,24 +255,7 @@ def build_test_system(np):
                 print(f"icache:{cpu.icache}, obj:{obj}, eventq_index:{obj.eventq_index}")
             for obj in cpu.dcache.descendants():
                 print(f"dcache:{cpu.dcache}, obj:{obj}, eventq_index:{obj.eventq_index}")
-        time.sleep(3)
-        # print("debug-zy, not kvm")
-        # import time
-        # time.sleep(2)
-        # for i,cpu in enumerate(test_sys.cpu):
-        #     # Child objects usually inherit the parent's event
-        #     # queue. Override that and use the same event queue for
-        #     # all devices.
-        #     for obj in cpu.descendants():
-        #         obj.eventq_index = 0
-        #     cpu.eventq_index = 1
-        #     print(f"debug-zy:cpu:{cpu}, index:{cpu.eventq_index}")
-    # print("[debug-zy] checking membus snoop_filter presence...")
-    # print(f"[debug-zy] test_sys.membus: {test_sys.membus}")
-    # print(f"[debug-zy] snoop_filter: {test_sys.membus.snoop_filter}")
-    # test_sys.membus.snoop_filter = SnoopFilter(max_capacity='0B')
-    # test_sys.membus = NoncoherentXBar()
-    # print(f"[debug-zy] snoop_filter: {test_sys.membus.snoop_filter}")
+
     return test_sys
 
 def build_drive_system(np):
@@ -443,14 +417,7 @@ if buildEnv['TARGET_ISA'] == "arm" and not args.bare_metal \
             sys.workload.dtb_filename = \
                 os.path.join(m5.options.outdir, '%s.dtb' % sysname)
             sys.generateDtb(sys.workload.dtb_filename)
-print(args.checkpoint_restore)
-print(test_sys.readfile)
 
-import time
 
-time.sleep(1)
-print(f"debug-zy, all command line args:{args}")
-print(f"m5.options:{m5.options}")
-time.sleep(3)
 Simulation.setWorkCountOptions(test_sys, args)
 Simulation.run(args, root, test_sys, FutureClass)
