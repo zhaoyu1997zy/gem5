@@ -661,6 +661,12 @@ BaseCache::recvAtomic(PacketPtr pkt)
         pkt->makeAtomicResponse();
     }
 
+    if (needs_crossbar) {
+        memSidePort.unlock_peer();
+    }else{
+        memSidePort.unlock();
+    }
+
     return lat * clockPeriod();
 
     // if(needXbar){
@@ -676,11 +682,6 @@ BaseCache::recvAtomic(PacketPtr pkt)
     // else{
     //     memSidePort.unlock();
     // }
-    if (needs_crossbar) {
-        memSidePort.unlock_peer();
-    }else{
-        memSidePort.unlock();
-    }
 }
 
 void
