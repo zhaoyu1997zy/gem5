@@ -673,7 +673,7 @@ Decoder::doImmediateState()
 }
 
 Decoder::InstBytes Decoder::dummy;
-Decoder::InstCacheMap Decoder::instCacheMap;
+// Decoder::InstCacheMap Decoder::instCacheMap;
 
 StaticInstPtr
 Decoder::decode(ExtMachInst mach_inst, Addr addr)
@@ -687,6 +687,7 @@ Decoder::decode(ExtMachInst mach_inst, Addr addr)
         si = decodeInst(mach_inst);
         (*instMap)[mach_inst] = si;
     }
+    // si = decodeInst(mach_inst);
 
     DPRINTF(Decode, "Decode: Decoded %s instruction: %#x\n",
             si->getName(), mach_inst);
