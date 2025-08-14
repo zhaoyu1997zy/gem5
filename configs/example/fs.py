@@ -236,6 +236,21 @@ def build_test_system(np):
                 obj.eventq_index = 0
             cpu.eventq_index = i + 1
         test_sys.kvm_vm = KvmVM()
+    else:
+        print("gem5 going parallel")
+        m5.ticks.fixGlobalFrequency()
+        for i, cpu in enumerate(test_sys.cpu):
+            print(f"debug-zy:i:{i}， cpu:{cpu}")
+            cpu.eventq_index = i+1
+
+            for obj in cpu.descendants():
+                obj.eventq_index = i + 1
+                print(f"debug-zy:set {obj} eventq-{i+1}")
+            print(f"L1Cache-eventq:{cpu.icache.eventq_index}, {cpu.dcache.eventq_index}")
+            for obj in cpu.icache.descendants():
+                print(f"icache:{cpu.icache}, obj:{obj}, eventq_index:{obj.eventq_index}")
+            for obj in cpu.dcache.descendants():
+                print(f"dcache:{cpu.dcache}, obj:{obj}, eventq_index:{obj.eventq_index}")
 
     return test_sys
 
@@ -365,6 +380,9 @@ if ObjectList.is_kvm_cpu(TestCPUClass) or \
     # Uses gem5's parallel event queue feature
     # Note: The simulator is quite picky about this number!
     root.sim_quantum = int(1e9) # 1 ms
+else:
+    root.sim_quantum = int(1e9)
+    # root.sim_quantum = m5.ticks.fromSeconds(m5.util.convert.anyToLatency("500us"))
 
 if args.timesync:
     root.time_sync_enable = True
