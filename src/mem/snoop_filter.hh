@@ -96,8 +96,7 @@ class SnoopFilter : public SimObject
     typedef std::vector<QueuedResponsePort*> SnoopList;
 
     SnoopFilter (const SnoopFilterParams &p) :
-        SimObject(p), reqLookupResult(cachedLocations.end()),
-        linesize(p.system->cacheLineSize()), lookupLatency(p.lookup_latency),
+        SimObject(p), linesize(p.system->cacheLineSize()), lookupLatency(p.lookup_latency),
         maxEntryCount(p.max_capacity / p.system->cacheLineSize()),
         stats(this)
     {
@@ -295,7 +294,16 @@ class SnoopFilter : public SimObject
         {
         }
         ReqLookupResult() = delete;
-    } reqLookupResult;
+    };
+
+    thread_local static std::unique_ptr<ReqLookupResult> reqLookupResult;
+
+    ReqLookupResult& getReqLookupResult() {
+        if (!reqLookupResult){
+            reqLookupResult = std::make_unique<ReqLookupResult>(cachedLocations.end());
+        }
+        return *reqLookupResult;
+    }
 
     /** List of all attached snooping CPU-side ports. */
     SnoopList cpuSidePorts;

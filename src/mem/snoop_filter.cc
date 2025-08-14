@@ -46,11 +46,14 @@
 #include "base/trace.hh"
 #include "debug/SnoopFilter.hh"
 #include "sim/system.hh"
+#include <thread>
 
 namespace gem5
 {
 
 const int SnoopFilter::SNOOP_MASK_SIZE;
+
+thread_local std::unique_ptr<SnoopFilter::ReqLookupResult> SnoopFilter::reqLookupResult;
 
 void
 SnoopFilter::eraseIfNullEntry(SnoopFilterCache::iterator& sf_it)
@@ -78,6 +81,7 @@ SnoopFilter::lookupRequest(const Packet* cpkt, const ResponsePort&
         line_addr |= LineSecure;
     }
     SnoopMask req_port = portToMask(cpu_side_port);
+    auto& reqLookupResult = getReqLookupResult();
     reqLookupResult.it = cachedLocations.find(line_addr);
     bool is_hit = (reqLookupResult.it != cachedLocations.end());
 
@@ -159,6 +163,7 @@ SnoopFilter::lookupRequest(const Packet* cpkt, const ResponsePort&
 void
 SnoopFilter::finishRequest(bool will_retry, Addr addr, bool is_secure)
 {
+    auto& reqLookupResult = getReqLookupResult();
     if (reqLookupResult.it != cachedLocations.end()) {
         // since we rely on the caller, do a basic check to ensure
         // that finishRequest is being called following lookupRequest
