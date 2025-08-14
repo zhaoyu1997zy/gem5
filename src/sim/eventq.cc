@@ -442,4 +442,35 @@ EventQueue::handleAsyncInsertions()
     async_queue_mutex.unlock();
 }
 
+void
+EventQueue::asyncRemove(Event *event)
+{
+    async_removal_queue_mutex.lock();
+    async_queue_mutex.lock();
+
+    if (std::find(async_queue.begin(), async_queue.end(), event) != async_queue.end()){
+        async_queue.remove(event);
+    }
+    else{
+        async_removal_queue.push_back(event);
+    }
+
+    async_removal_queue_mutex.unlock();
+    async_queue_mutex.unlock();
+}
+
+void
+EventQueue::handleAsyncRemovals()
+{
+    assert(this == curEventQueue());
+
+    async_removal_queue_mutex.lock();
+
+    while(!async_removal_queue.empty()){
+        remove(async_removal_queue.front());
+        async_removal_queue.pop_front();
+    }
+    async_removal_queue_mutex.unlock();
+}
+
 } // namespace gem5
