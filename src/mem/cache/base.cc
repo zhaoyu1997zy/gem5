@@ -2559,6 +2559,28 @@ BaseCache::MemSidePort::recvFunctionalSnoop(PacketPtr pkt)
     cache->functionalAccess(pkt, false);
 }
 
+bool
+BaseCache::MemSidePort::sendTimingReq(PacketPtr pkt)
+{
+    Port* peer_port = &getPeer();
+    bool needs_crossbar = dynamic_cast<QueuedResponsePort*>(peer_port) != nullptr;
+    if (needs_crossbar) {
+        lock_peer();
+    } else {
+        lock();
+    }
+
+    bool ok = RequestPort::sendTimingReq(pkt);
+
+    if (needs_crossbar) {
+        unlock_peer();
+    } else {
+        unlock();
+    }
+
+    return ok;
+}
+
 void
 BaseCache::CacheReqPacketQueue::sendDeferredPacket()
 {

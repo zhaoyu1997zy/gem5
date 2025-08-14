@@ -272,6 +272,8 @@ class BaseCache : public ClockedObject
         void unlock() override {
             cache->cache_mutex.unlock();
         }
+
+        virtual bool sendTimingReq(PacketPtr pkt);
     };
 
     /**

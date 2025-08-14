@@ -1007,6 +1007,17 @@ Cache::handleSnoop(PacketPtr pkt, CacheBlk *blk, bool is_timing,
     uint32_t snoop_delay = 0;
 
     if (forwardSnoops) {
+
+        Port* peer_port = &cpuSidePort.getPeer();
+        bool needs_crossbar = dynamic_cast<QueuedResponsePort*>(peer_port) != nullptr;
+        if (needs_crossbar) {
+            // L2cache->cpuSidePort连接的是xbar
+            cpuSidePort.lock_peer();
+        } else {
+            // L1cache->cpuSidePort连接的不是xbar(cpu->dcache_port)
+            cpuSidePort.lock();
+        }
+        
         // first propagate snoop upward to see if anyone above us wants to
         // handle it.  save & restore packet src since it will get
         // rewritten to be relative to CPU-side bus (if any)
@@ -1050,6 +1061,12 @@ Cache::handleSnoop(PacketPtr pkt, CacheBlk *blk, bool is_timing,
                 // forward response to original requestor
                 assert(pkt->isResponse());
             }
+        }
+
+        if (needs_crossbar){
+            cpuSidePort.unlock_peer();
+        }else{
+            cpuSidePort.unlock();
         }
     }
 
