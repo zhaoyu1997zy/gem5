@@ -673,7 +673,6 @@ Decoder::doImmediateState()
 }
 
 Decoder::InstBytes Decoder::dummy;
-Decoder::InstCacheMap Decoder::instCacheMap;
 
 StaticInstPtr
 Decoder::decode(ExtMachInst mach_inst, Addr addr)

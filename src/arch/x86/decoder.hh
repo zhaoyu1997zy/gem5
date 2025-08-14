@@ -242,6 +242,8 @@ class Decoder : public InstDecoder
     typedef std::unordered_map<CacheKey, DecodePages *> AddrCacheMap;
     AddrCacheMap addrCacheMap;
 
+    std::unique_ptr<decode_cache::InstMap<ExtMachInst>> localInstMap;
+
     decode_cache::InstMap<ExtMachInst> *instMap = nullptr;
     typedef std::unordered_map<
             CacheKey, decode_cache::InstMap<ExtMachInst> *> InstCacheMap;
@@ -260,6 +262,9 @@ class Decoder : public InstDecoder
         emi.reset();
         emi.mode.mode = mode;
         emi.mode.submode = submode;
+
+        localInstMap = std::make_unique<decode_cache::InstMap<ExtMachInst>>();
+        instMap = localInstMap.get();
     }
 
     void
@@ -281,14 +286,6 @@ class Decoder : public InstDecoder
         } else {
             decodePages = new DecodePages;
             addrCacheMap[m5Reg] = decodePages;
-        }
-
-        InstCacheMap::iterator imIter = instCacheMap.find(m5Reg);
-        if (imIter != instCacheMap.end()) {
-            instMap = imIter->second;
-        } else {
-            instMap = new decode_cache::InstMap<ExtMachInst>;
-            instCacheMap[m5Reg] = instMap;
         }
     }
 
