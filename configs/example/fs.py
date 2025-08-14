@@ -129,8 +129,15 @@ def build_test_system(np):
     elif args.kernel is not None:
         test_sys.workload.object_file = binary(args.kernel)
 
-    if args.script is not None:
+    # Only apply --script if this is not a restored checkpoint
+    if not args.checkpoint_restore and args.script:
         test_sys.readfile = args.script
+
+    # Overwrite with readfile if provided (for example, after checkpoint)
+    if args.readfile:
+        test_sys.readfile = args.readfile
+
+
 
     if args.lpae:
         test_sys.have_lpae = True

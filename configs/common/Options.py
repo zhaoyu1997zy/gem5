@@ -533,3 +533,7 @@ def addFSOptions(parser):
     parser.add_argument(
         "--command-line-file", action="store", default=None, type=str,
         help="File with a template for the kernel command line")
+
+    parser.add_argument(
+    "--readfile", default="", metavar="FILE",
+    help="Script to read from simulated system console input")

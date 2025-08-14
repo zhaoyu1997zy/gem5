@@ -1,0 +1,8 @@
+m5 dumpstats
+size=10
+num_threads=1
+print_level=1
+echo "Start run cal_matrix_v1($size, $num_threads, $print_level)"
+/home/cal_matrix_v1 $size $num_threads $print_level
+echo "Run Success!"
+m5 exit
