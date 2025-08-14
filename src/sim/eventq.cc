@@ -400,7 +400,7 @@ Event::instanceString() const
 void
 Event::dump() const
 {
-    cprintf("Event %s (%s)\n", name(), description());
+    cprintf("Event %s (%s) [instance:%d]\n", name(), description(), instance);
     cprintf("Flags: %#x\n", flags);
 #ifdef EVENTQ_DEBUG
     cprintf("Created: %d\n", whenCreated);
