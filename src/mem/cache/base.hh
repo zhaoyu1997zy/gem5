@@ -94,6 +94,9 @@ struct BaseCacheParams;
  */
 class BaseCache : public ClockedObject
 {
+  private:
+  std::recursive_mutex cache_mutex;
+
   protected:
     /**
      * Indexes to enumerate the MSHR queues.
@@ -261,6 +264,14 @@ class BaseCache : public ClockedObject
 
         MemSidePort(const std::string &_name, BaseCache *_cache,
                     const std::string &_label);
+
+        void lock() override {
+            cache->cache_mutex.lock();
+        }
+        
+        void unlock() override {
+            cache->cache_mutex.unlock();
+        }
     };
 
     /**

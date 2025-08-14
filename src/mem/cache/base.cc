@@ -558,6 +558,7 @@ BaseCache::recvTimingResp(PacketPtr pkt)
 Tick
 BaseCache::recvAtomic(PacketPtr pkt)
 {
+    memSidePort.lock();
     // should assert here that there are no outstanding MSHRs or
     // writebacks... that would mean that someone used an atomic
     // access in timing mode
@@ -569,6 +570,12 @@ BaseCache::recvAtomic(PacketPtr pkt)
     CacheBlk *blk = nullptr;
     PacketList writebacks;
     bool satisfied = access(pkt, blk, lat, writebacks);
+
+    bool needs_crossbar = !satisfied && pkt->needsResponse();
+    if (needs_crossbar) {
+        memSidePort.unlock();
+        memSidePort.lock_peer();
+    }
 
     if (pkt->isClean() && blk && blk->isSet(CacheBlk::DirtyBit)) {
         // A cache clean opearation is looking for a dirty
@@ -630,6 +637,12 @@ BaseCache::recvAtomic(PacketPtr pkt)
 
     if (pkt->needsResponse()) {
         pkt->makeAtomicResponse();
+    }
+
+    if (needs_crossbar) {
+        memSidePort.unlock_peer();
+    }else{
+        memSidePort.unlock();
     }
 
     return lat * clockPeriod();

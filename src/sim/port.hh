@@ -99,6 +99,11 @@ class Port
 
   public:
 
+    virtual void lock(){}
+    virtual void unlock(){}
+    virtual void lock_peer(){}
+    virtual void unlock_peer(){}
+
     /**
      * Virtual destructor due to inheritance.
      */
