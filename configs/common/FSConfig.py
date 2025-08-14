@@ -476,6 +476,7 @@ def makeX86System(mem_mode, numCPUs=1, mdesc=None, workload=None, Ruby=False):
 
     # Platform
     self.pc = Pc()
+    self.pc.com_1.device.port = 13456
 
     # Create and connect the busses required by each memory system
     if Ruby:
