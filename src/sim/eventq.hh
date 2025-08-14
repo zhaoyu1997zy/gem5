@@ -269,6 +269,7 @@ class Event : public EventBase, public Serializable
     static Event *removeItem(Event *event, Event *last);
 
     Tick _when;         //!< timestamp when event should be processed
+    Tick _nextWhen;         //!< timestamp when event should be rescheduled
     Priority _priority; //!< event priority
     Flags flags;
 
@@ -302,6 +303,13 @@ class Event : public EventBase, public Serializable
 #ifdef EVENTQ_DEBUG
         whenScheduled = curTick();
 #endif
+    }
+
+    void
+    setNextWhen(Tick when, EventQueue *q)
+    {
+        _nextWhen = when;
+        queue = q;
     }
 
     bool
@@ -506,6 +514,8 @@ class Event : public EventBase, public Serializable
      * @ingroup api_eventq
      */
     Tick when() const { return _when; }
+
+    Tick nextWhen() const { return _nextWhen; }
 
     /**
      * Get the event priority
@@ -785,8 +795,6 @@ class EventQueue
         assert(!event->scheduled());
         assert(event->initialized());
 
-        event->setWhen(when, this);
-
         // The check below is to make sure of two things
         // a. A thread schedules local events on other queues through the
         //    asyncq.
@@ -795,8 +803,10 @@ class EventQueue
         //    a total order amongst the global events. See global_event.{cc,hh}
         //    for more explanation.
         if (inParallelMode && (this != curEventQueue() || global)) {
+            event->setNextWhen(when, this);
             asyncInsert(event);
         } else {
+            event->setWhen(when, this);
             insert(event);
         }
         event->flags.set(Event::Scheduled);
@@ -876,8 +886,10 @@ class EventQueue
         event->setWhen(when, this);
 
         if (inParallelMode && (this != curEventQueue())) {
+            event->setNextWhen(when, this);
             asyncInsert(event);
         } else {
+            event->setWhen(when, this);
             insert(event);
         }
         

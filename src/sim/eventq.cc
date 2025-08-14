@@ -462,7 +462,12 @@ EventQueue::handleAsyncInsertions()
     async_queue_mutex.lock();
 
     while (!async_queue.empty()) {
-        insert(async_queue.front());
+        auto event = async_queue.front();
+        if (event->nextWhen() && event->when() < event->nextWhen()){
+            event->setWhen(event->nextWhen(), this);
+            event->setNextWhen(0, this);
+        }
+        insert(event);
         async_queue.pop_front();
     }
 
